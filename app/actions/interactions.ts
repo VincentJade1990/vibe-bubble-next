@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache'
  * 点赞/取消点赞
  */
 export async function toggleLike(inspirationId: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
@@ -43,7 +43,7 @@ export async function toggleLike(inspirationId: string) {
  * 收藏/取消收藏
  */
 export async function toggleFavorite(inspirationId: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
@@ -79,7 +79,7 @@ export async function toggleFavorite(inspirationId: string) {
  * 添加评论
  */
 export async function addComment(inspirationId: string, formData: FormData) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
@@ -110,7 +110,7 @@ export async function addComment(inspirationId: string, formData: FormData) {
  * 获取当前用户对某灵感的互动状态
  */
 export async function getUserInteractions(inspirationId: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {

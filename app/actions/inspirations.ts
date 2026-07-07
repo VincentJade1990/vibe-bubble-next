@@ -13,7 +13,7 @@ export async function getInspirations(options?: {
   tag?: string
   projectType?: string
 }) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { status = 'published', page = 1, limit = 20, tag, projectType } = options || {}
 
   let query = supabase
@@ -45,7 +45,7 @@ export async function getInspirations(options?: {
  * 获取灵感详情
  */
 export async function getInspirationBySlug(slug: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data, error } = await supabase
     .from('inspirations')
@@ -69,7 +69,7 @@ export async function getAllInspirations(options?: {
   page?: number
   limit?: number
 }) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { status, page = 1, limit = 20 } = options || {}
 
   let query = supabase
@@ -97,7 +97,7 @@ export async function getAllInspirations(options?: {
  * 创建灵感
  */
 export async function createInspiration(formData: FormData) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const title = formData.get('title') as string
   const slug = title.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-').replace(/^-|-$/g, '') + '-' + Date.now().toString(36).slice(-4)
@@ -133,7 +133,7 @@ export async function createInspiration(formData: FormData) {
  * 更新灵感
  */
 export async function updateInspiration(id: string, formData: FormData) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('inspirations')
@@ -165,7 +165,7 @@ export async function updateInspiration(id: string, formData: FormData) {
  * 删除灵感
  */
 export async function deleteInspiration(id: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('inspirations')
@@ -185,7 +185,7 @@ export async function deleteInspiration(id: string) {
  * 发布灵感
  */
 export async function publishInspiration(id: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('inspirations')

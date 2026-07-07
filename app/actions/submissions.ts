@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache'
  * 用户提交投稿
  */
 export async function createSubmission(formData: FormData) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -45,7 +45,7 @@ export async function getSubmissions(options?: {
   page?: number
   limit?: number
 }) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { status, page = 1, limit = 20 } = options || {}
 
   let query = supabase
@@ -77,7 +77,7 @@ export async function getSubmissions(options?: {
  * 通过投稿（转为灵感）
  */
 export async function approveSubmission(id: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: submission, error: fetchError } = await supabase
     .from('submissions')
@@ -131,7 +131,7 @@ export async function approveSubmission(id: string) {
  * 拒绝投稿
  */
 export async function rejectSubmission(id: string, adminNote?: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const update: any = { status: 'rejected' }
   if (adminNote) {
@@ -155,7 +155,7 @@ export async function rejectSubmission(id: string, adminNote?: string) {
  * 删除投稿
  */
 export async function deleteSubmission(id: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('submissions')
@@ -174,7 +174,7 @@ export async function deleteSubmission(id: string) {
  * 获取当前用户的投稿记录
  */
 export async function getMySubmissions() {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {

@@ -7,7 +7,7 @@ import { createClient as createAdminClient } from '@/lib/supabase/admin'
  * 用户注册
  */
 export async function signUp(formData: FormData) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const email = formData.get('email') as string
   const password = formData.get('password') as string
@@ -42,7 +42,7 @@ export async function signUp(formData: FormData) {
  * 用户登录
  */
 export async function signIn(formData: FormData) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const email = formData.get('email') as string
   const password = formData.get('password') as string
@@ -63,7 +63,7 @@ export async function signIn(formData: FormData) {
  * 管理员登录
  */
 export async function adminLogin(formData: FormData) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const email = formData.get('email') as string
   const password = formData.get('password') as string
@@ -95,6 +95,6 @@ export async function adminLogin(formData: FormData) {
  * 退出登录
  */
 export async function signOut() {
-  const supabase = createClient()
+  const supabase = await createClient()
   await supabase.auth.signOut()
 }

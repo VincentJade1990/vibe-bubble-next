@@ -36,7 +36,7 @@ export default function RegisterPage() {
       return
     }
 
-    const supabase = createClient()
+    const supabase = await createClient()
 
     // 注册账号
     const { data, error: signUpError } = await supabase.auth.signUp({

@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache'
  * 获取前台评论列表（已审核）
  */
 export async function getComments(inspirationId: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data, error } = await supabase
     .from('comments')
@@ -30,7 +30,7 @@ export async function getComments(inspirationId: string) {
  * 获取评论列表（后台管理用）
  */
 export async function getAdminComments(options?: { status?: string; page?: number; limit?: number }) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { status, page = 1, limit = 20 } = options || {}
 
   let query = supabase
@@ -62,7 +62,7 @@ export async function getAdminComments(options?: { status?: string; page?: numbe
  * 审核通过评论
  */
 export async function approveComment(id: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('comments')
@@ -81,7 +81,7 @@ export async function approveComment(id: string) {
  * 拒绝评论
  */
 export async function rejectComment(id: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('comments')
@@ -100,7 +100,7 @@ export async function rejectComment(id: string) {
  * 删除评论
  */
 export async function deleteComment(id: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('comments')
@@ -119,7 +119,7 @@ export async function deleteComment(id: string) {
  * 获取当前用户的评论列表
  */
 export async function getMyComments() {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {

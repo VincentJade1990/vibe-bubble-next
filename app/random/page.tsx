@@ -14,7 +14,7 @@ export default function RandomPage() {
 
   const fetchRandom = useCallback(async () => {
     setLoading(true)
-    const supabase = createClient()
+    const supabase = await createClient()
 
     // 获取已发布的灵感总数
     const { count } = await supabase

@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server'
  * 获取当前用户的个人资料
  */
 export async function getProfile() {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
@@ -30,7 +30,7 @@ export async function getProfile() {
  * 更新个人资料
  */
 export async function updateProfile(formData: FormData) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
@@ -58,7 +58,7 @@ export async function updateProfile(formData: FormData) {
  * 获取当前用户的收藏列表
  */
 export async function getMyFavorites() {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
@@ -82,7 +82,7 @@ export async function getMyFavorites() {
  * 获取当前用户的点赞列表
  */
 export async function getMyLikes() {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
@@ -106,7 +106,7 @@ export async function getMyLikes() {
  * 获取当前用户的评论列表
  */
 export async function getMyComments() {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {

@@ -11,7 +11,7 @@ export async function getCandidates(options?: {
   page?: number
   limit?: number
 }) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { status, page = 1, limit = 20 } = options || {}
 
   let query = supabase
@@ -42,7 +42,7 @@ export async function getCandidates(options?: {
  * 通过候选（转为灵感）
  */
 export async function approveCandidate(id: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: candidate, error: fetchError } = await supabase
     .from('candidates')
@@ -93,7 +93,7 @@ export async function approveCandidate(id: string) {
  * 拒绝候选
  */
 export async function rejectCandidate(id: string, reason?: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const update: any = { review_status: 'rejected' }
   if (reason) {
@@ -117,7 +117,7 @@ export async function rejectCandidate(id: string, reason?: string) {
  * 删除候选
  */
 export async function deleteCandidate(id: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('candidates')
