@@ -10,9 +10,10 @@ import { InteractionBar } from './interaction-bar'
 export default async function InspirationDetailPage({
   params,
 }: {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }) {
-  const { data: inspiration, error } = await getInspirationBySlug(params.slug)
+  const { slug } = await params
+  const { data: inspiration, error } = await getInspirationBySlug(slug)
 
   if (!inspiration || error) {
     notFound()
