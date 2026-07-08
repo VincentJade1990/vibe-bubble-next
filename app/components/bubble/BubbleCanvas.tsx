@@ -2,11 +2,10 @@
 
 /**
  * 气泡画布组件（适配 Next.js + Supabase）
- * 基于 Framer Motion + 自定义物理引擎实现气泡漂浮、碰撞、破碎粒子动效
+ * 基于 自定义物理引擎 + CSS 动画实现气泡漂浮、碰撞、破碎粒子动效
  */
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { X, Heart, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import type { CaseItem } from '@/app/lib/bubble-types';
@@ -305,6 +304,21 @@ export default function BubbleCanvas({ cases }: BubbleCanvasProps) {
       onWheel={handleWheel}
       style={{ touchAction: 'none' }}
     >
+      <style>{`
+        @keyframes pulseRing {
+          0%, 100% { opacity: 0.3; transform: scale(1); }
+          50% { opacity: 0.7; transform: scale(1.08); }
+        }
+        @keyframes modalIn {
+          from { opacity: 0; transform: scale(0.9) translateY(20px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `}</style>
+
       <div
         className="absolute inset-0 opacity-[0.08] pointer-events-none"
         style={{
@@ -321,105 +335,100 @@ export default function BubbleCanvas({ cases }: BubbleCanvasProps) {
           transformOrigin: '0 0',
         }}
       >
-        <AnimatePresence>
-          {bubbles.map((bubble) => {
-            if (bubble.isBroken) return null;
-            const config = TIER_CONFIG[bubble.tier];
-            const actualSize = bubble.size * (bubble.tier === 'S' || bubble.tier === 'monthly' ? bubble.breatheScale : 1);
+        {bubbles.map((bubble) => {
+          if (bubble.isBroken) return null;
+          const config = TIER_CONFIG[bubble.tier];
+          const actualSize = bubble.size * (bubble.tier === 'S' || bubble.tier === 'monthly' ? bubble.breatheScale : 1);
 
-            return (
-              <motion.div
-                key={bubble.id}
-                layout
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: 1, scale: 1, x: bubble.x - actualSize / 2, y: bubble.y - actualSize / 2 }}
-                exit={{ opacity: 0, scale: 0 }}
-                transition={{ opacity: { duration: 0.3 }, scale: { type: 'spring', stiffness: 300, damping: 25 }, x: { duration: 0 }, y: { duration: 0 } }}
-                className="absolute rounded-full flex flex-col items-center justify-center cursor-pointer select-none"
-                style={{
-                  width: actualSize,
-                  height: actualSize,
-                  background: config.color,
-                  boxShadow: bubble.tier === 'S' || bubble.tier === 'monthly'
-                    ? `0 0 ${bubble.tier === 'monthly' ? 50 : 30}px ${config.glowColor}, inset 0 0 20px rgba(255,255,255,0.15)`
-                    : `0 2px 8px rgba(0,0,0,0.08)`,
-                  border: bubble.tier === 'A' || bubble.tier === 'B'
-                    ? '1px solid rgba(255,255,255,0.1)'
-                    : `1px solid ${config.glowColor}`,
-                  backdropFilter: 'blur(4px)',
-                }}
-                onClick={() => handleBubbleClick(bubble)}
-                whileHover={{ scale: 1.08 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                {(bubble.tier === 'S' || bubble.tier === 'monthly') && (
-                  <img
-                    src={bubble.caseItem.coverImage}
-                    alt=""
-                    className="absolute inset-1 rounded-full object-cover opacity-40 pointer-events-none"
-                    draggable={false}
-                  />
-                )}
-                <div className="relative z-10 text-center px-1.5 pointer-events-none">
-                  <span className={`text-[10px] font-bold leading-tight ${
-                    bubble.tier === 'S' || bubble.tier === 'monthly' ? 'text-white drop-shadow-md' : 'text-slate-300'
-                  }`}>
-                    {bubble.caseItem.title.slice(0, bubble.tier === 'monthly' ? 8 : bubble.tier === 'S' ? 5 : 3)}
-                  </span>
-                  <span className={`block text-[9px] mt-0.5 ${
-                    bubble.tier === 'S' || bubble.tier === 'monthly' ? 'text-white/70' : 'text-slate-500'
-                  }`}>
-                    {PLATFORM_NAMES[bubble.caseItem.platform] || bubble.caseItem.platform}
-                  </span>
+          return (
+            <div
+              key={bubble.id}
+              className="absolute rounded-full flex flex-col items-center justify-center cursor-pointer select-none transition-transform duration-100 hover:scale-105 active:scale-95"
+              style={{
+                width: actualSize,
+                height: actualSize,
+                transform: `translate(${bubble.x - actualSize / 2}px, ${bubble.y - actualSize / 2}px)`,
+                background: config.color,
+                boxShadow: bubble.tier === 'S' || bubble.tier === 'monthly'
+                  ? `0 0 ${bubble.tier === 'monthly' ? 50 : 30}px ${config.glowColor}, inset 0 0 20px rgba(255,255,255,0.15)`
+                  : `0 2px 8px rgba(0,0,0,0.08)`,
+                border: bubble.tier === 'A' || bubble.tier === 'B'
+                  ? '1px solid rgba(255,255,255,0.1)'
+                  : `1px solid ${config.glowColor}`,
+                backdropFilter: 'blur(4px)',
+                willChange: 'transform',
+              }}
+              onClick={() => handleBubbleClick(bubble)}
+            >
+              {(bubble.tier === 'S' || bubble.tier === 'monthly') && (
+                <img
+                  src={bubble.caseItem.coverImage}
+                  alt=""
+                  className="absolute inset-1 rounded-full object-cover opacity-40 pointer-events-none"
+                  draggable={false}
+                />
+              )}
+              <div className="relative z-10 text-center px-1.5 pointer-events-none">
+                <span className={`text-[10px] font-bold leading-tight ${
+                  bubble.tier === 'S' || bubble.tier === 'monthly' ? 'text-white drop-shadow-md' : 'text-slate-300'
+                }`}>
+                  {bubble.caseItem.title.slice(0, bubble.tier === 'monthly' ? 8 : bubble.tier === 'S' ? 5 : 3)}
+                </span>
+                <span className={`block text-[9px] mt-0.5 ${
+                  bubble.tier === 'S' || bubble.tier === 'monthly' ? 'text-white/70' : 'text-slate-500'
+                }`}>
+                  {PLATFORM_NAMES[bubble.caseItem.platform] || bubble.caseItem.platform}
+                </span>
+              </div>
+              {bubble.tier === 'monthly' && (
+                <div className="absolute -top-1 -right-1 px-1.5 py-0.5 rounded-full bg-sky-500 text-white text-[9px] font-bold shadow-lg">
+                  精选
                 </div>
-                {bubble.tier === 'monthly' && (
-                  <div className="absolute -top-1 -right-1 px-1.5 py-0.5 rounded-full bg-sky-500 text-white text-[9px] font-bold shadow-lg">
-                    精选
-                  </div>
-                )}
-                {(bubble.tier === 'S' || bubble.tier === 'monthly') && (
-                  <motion.div
-                    className="absolute inset-[-4px] rounded-full pointer-events-none"
-                    style={{ border: `2px solid ${config.glowColor}` }}
-                    animate={{ opacity: [0.3, 0.7, 0.3], scale: [1, 1.08, 1] }}
-                    transition={{ duration: bubble.tier === 'monthly' ? 2.5 : 2, repeat: Infinity, ease: 'easeInOut' }}
-                  />
-                )}
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
+              )}
+              {(bubble.tier === 'S' || bubble.tier === 'monthly') && (
+                <div
+                  className="absolute inset-[-4px] rounded-full pointer-events-none"
+                  style={{
+                    border: `2px solid ${config.glowColor}`,
+                    animation: `pulseRing ${bubble.tier === 'monthly' ? 2.5 : 2}s ease-in-out infinite`,
+                  }}
+                />
+              )}
+            </div>
+          );
+        })}
       </div>
 
-      <AnimatePresence>
-        {screenParticles.map((p) => (
-          <motion.div
-            key={p.id}
-            initial={{ opacity: 1, scale: 1, rotate: p.rotation }}
-            animate={{ opacity: p.opacity, scale: 0.2, rotate: p.rotation + p.rotationSpeed * 10 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0 }}
-            className="absolute pointer-events-none"
-            style={{
-              left: p.x, top: p.y,
-              width: p.size * scale, height: p.size * scale,
-              background: p.color,
-              borderRadius: '30%',
-              transform: 'translate(-50%, -50%)',
-            }}
-          />
-        ))}
-      </AnimatePresence>
+      {screenParticles.map((p) => (
+        <div
+          key={p.id}
+          className="absolute pointer-events-none"
+          style={{
+            left: p.x,
+            top: p.y,
+            width: p.size * scale,
+            height: p.size * scale,
+            background: p.color,
+            borderRadius: '30%',
+            transform: `translate(-50%, -50%) rotate(${p.rotation}deg) scale(${0.2 + p.opacity * 0.8})`,
+            opacity: p.opacity,
+          }}
+        />
+      ))}
 
       <div className="absolute bottom-4 right-4 flex flex-col gap-2 z-10">
-        <motion.button whileTap={{ scale: 0.9 }} onClick={() => setScale((s) => Math.min(4, s + 0.25))}
-          className="w-9 h-9 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center text-white hover:border-purple-500/50 shadow-md">
+        <button
+          onClick={() => setScale((s) => Math.min(4, s + 0.25))}
+          className="w-9 h-9 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center text-white hover:border-purple-500/50 shadow-md active:scale-90 transition-transform"
+        >
           +
-        </motion.button>
-        <motion.button whileTap={{ scale: 0.9 }} onClick={() => setScale((s) => Math.max(0.3, s - 0.25))}
-          className="w-9 h-9 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center text-white hover:border-purple-500/50 shadow-md">
+        </button>
+        <button
+          onClick={() => setScale((s) => Math.max(0.3, s - 0.25))}
+          className="w-9 h-9 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center text-white hover:border-purple-500/50 shadow-md active:scale-90 transition-transform"
+        >
           -
-        </motion.button>
+        </button>
       </div>
 
       <div className="absolute top-3 right-3 text-xs text-slate-400 bg-slate-800/80 px-2 py-1 rounded-md backdrop-blur-sm z-10">
@@ -431,59 +440,52 @@ export default function BubbleCanvas({ cases }: BubbleCanvasProps) {
         <p>滚轮：缩放画布</p>
       </div>
 
-      <AnimatePresence>
-        {previewCase && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-20 flex items-center justify-center bg-black/30 backdrop-blur-sm"
-            onClick={() => setPreviewCase(null)}
+      {previewCase && (
+        <div
+          className="absolute inset-0 z-20 flex items-center justify-center bg-black/30 backdrop-blur-sm"
+          style={{ animation: 'fadeIn 0.2s ease-out forwards' }}
+          onClick={() => setPreviewCase(null)}
+        >
+          <div
+            className="w-96 max-w-[92vw] bg-slate-900 border border-white/10 rounded-2xl overflow-hidden shadow-2xl"
+            style={{ animation: 'modalIn 0.3s ease-out forwards' }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <motion.div
-              initial={{ scale: 0.6, opacity: 0, y: 30 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              transition={{ type: 'spring', stiffness: 350, damping: 28 }}
-              className="w-96 max-w-[92vw] bg-slate-900 border border-white/10 rounded-2xl overflow-hidden shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="relative h-44">
-                <img src={previewCase.coverImage} alt={previewCase.title} className="w-full h-full object-cover" draggable={false} />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                <button onClick={() => setPreviewCase(null)}
-                  className="absolute top-2 right-2 p-1.5 rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors">
-                  <X className="w-4 h-4" />
+            <div className="relative h-44">
+              <img src={previewCase.coverImage} alt={previewCase.title} className="w-full h-full object-cover" draggable={false} />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+              <button onClick={() => setPreviewCase(null)}
+                className="absolute top-2 right-2 p-1.5 rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+              <div className="absolute bottom-3 left-3 right-3">
+                <h4 className="font-bold text-white text-lg drop-shadow-md">{previewCase.title}</h4>
+                <p className="text-xs text-white/80 mt-0.5">{PLATFORM_NAMES[previewCase.platform] || previewCase.platform}</p>
+              </div>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="flex flex-wrap gap-1.5">
+                {previewCase.sceneTags.map((tag: string) => (
+                  <span key={tag} className="px-2 py-0.5 text-xs rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20">{tag}</span>
+                ))}
+              </div>
+              <div className="bg-slate-800 rounded-lg p-3">
+                <p className="text-xs text-slate-400 font-medium mb-1">简介</p>
+                <p className="text-xs text-slate-200 line-clamp-3 leading-relaxed">{previewCase.description || previewCase.prompt}</p>
+              </div>
+              <div className="flex gap-2">
+                <button className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium text-slate-300 bg-slate-800 hover:bg-purple-500/10 transition-colors">
+                  <Heart className="w-4 h-4" /> 点赞
                 </button>
-                <div className="absolute bottom-3 left-3 right-3">
-                  <h4 className="font-bold text-white text-lg drop-shadow-md">{previewCase.title}</h4>
-                  <p className="text-xs text-white/80 mt-0.5">{PLATFORM_NAMES[previewCase.platform] || previewCase.platform}</p>
-                </div>
+                <Link href={`/inspiration/${previewCase.slug}`}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium text-white bg-purple-600 hover:bg-purple-500 transition-colors">
+                  <ExternalLink className="w-4 h-4" /> 详情
+                </Link>
               </div>
-              <div className="p-4 space-y-3">
-                <div className="flex flex-wrap gap-1.5">
-                  {previewCase.sceneTags.map((tag: string) => (
-                    <span key={tag} className="px-2 py-0.5 text-xs rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20">{tag}</span>
-                  ))}
-                </div>
-                <div className="bg-slate-800 rounded-lg p-3">
-                  <p className="text-xs text-slate-400 font-medium mb-1">简介</p>
-                  <p className="text-xs text-slate-200 line-clamp-3 leading-relaxed">{previewCase.description || previewCase.prompt}</p>
-                </div>
-                <div className="flex gap-2">
-                  <button className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium text-slate-300 bg-slate-800 hover:bg-purple-500/10 transition-colors">
-                    <Heart className="w-4 h-4" /> 点赞
-                  </button>
-                  <Link href={`/inspiration/${previewCase.slug}`}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium text-white bg-purple-600 hover:bg-purple-500 transition-colors">
-                    <ExternalLink className="w-4 h-4" /> 详情
-                  </Link>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
