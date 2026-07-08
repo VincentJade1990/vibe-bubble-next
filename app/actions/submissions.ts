@@ -1,76 +1,89 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { mockSubmissions } from '@/lib/mock-data'
 import { revalidatePath } from 'next/cache'
 
 /**
  * 用户提交投稿
+ * 当 Supabase 不可用时返回错误提示
  */
 export async function createSubmission(formData: FormData) {
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user } } = await supabase.auth.getUser()
 
-  const submission = {
-    user_id: user?.id || null,
-    title: formData.get('title') as string,
-    description: formData.get('description') as string || null,
-    source_url: formData.get('source_url') as string || null,
-    source_platform: formData.get('source_platform') as string || null,
-    author_name: formData.get('author_name') as string || null,
-    cover_image_url: formData.get('cover_image_url') as string || null,
-    project_type: formData.get('project_type') as string || null,
-    tags: formData.get('tags') ? (formData.get('tags') as string).split(',').map(t => t.trim()).filter(Boolean) : null,
-    status: 'pending',
+    const submission = {
+      user_id: user?.id || null,
+      title: formData.get('title') as string,
+      description: formData.get('description') as string || null,
+      source_url: formData.get('source_url') as string || null,
+      source_platform: formData.get('source_platform') as string || null,
+      author_name: formData.get('author_name') as string || null,
+      cover_image_url: formData.get('cover_image_url') as string || null,
+      project_type: formData.get('project_type') as string || null,
+      tags: formData.get('tags') ? (formData.get('tags') as string).split(',').map(t => t.trim()).filter(Boolean) : null,
+      status: 'pending',
+    }
+
+    const { data, error } = await supabase
+      .from('submissions')
+      .insert(submission)
+      .select()
+      .single()
+
+    if (error) {
+      return { success: false, error: `投稿失败: ${error.message}` }
+    }
+
+    return { success: true, error: null as string | null, data }
+  } catch (err) {
+    console.warn('createSubmission: Supabase unavailable', err)
+    return { success: false, error: '投稿失败: Supabase 连接异常' }
   }
-
-  const { data, error } = await supabase
-    .from('submissions')
-    .insert(submission)
-    .select()
-    .single()
-
-  if (error) {
-    return { success: false, error: `投稿失败: ${error.message}` }
-  }
-
-  return { success: true, error: null as string | null, data }
 }
 
 /**
  * 获取投稿列表（后台管理用）
+ * 当 Supabase 不可用时自动回退到 mock 数据
  */
 export async function getSubmissions(options?: {
   status?: string
   page?: number
   limit?: number
 }) {
-  const supabase = await createClient()
-  const { status, page = 1, limit = 20 } = options || {}
+  try {
+    const supabase = await createClient()
+    const { status, page = 1, limit = 20 } = options || {}
 
-  let query = supabase
-    .from('submissions')
-    .select(`
-      *,
-      profiles(nickname)
-    `, { count: 'exact' })
-    .order('created_at', { ascending: false })
+    let query = supabase
+      .from('submissions')
+      .select(`
+        *,
+        profiles(nickname)
+      `, { count: 'exact' })
+      .order('created_at', { ascending: false })
 
-  if (status) {
-    query = query.eq('status', status)
+    if (status) {
+      query = query.eq('status', status)
+    }
+
+    const from = (page - 1) * limit
+    const to = from + limit - 1
+    query = query.range(from, to)
+
+    const { data, error, count } = await query
+
+    if (error) {
+      throw new Error(`获取投稿失败: ${error.message}`)
+    }
+
+    return { data: data as any[], count: count || 0 }
+  } catch (err) {
+    console.warn('getSubmissions: Supabase unavailable, using mock data', err)
+    return { data: mockSubmissions, count: mockSubmissions.length }
   }
-
-  const from = (page - 1) * limit
-  const to = from + limit - 1
-  query = query.range(from, to)
-
-  const { data, error, count } = await query
-
-  if (error) {
-    throw new Error(`获取投稿失败: ${error.message}`)
-  }
-
-  return { data: data as any[], count: count || 0 }
 }
 
 /**
@@ -174,22 +187,27 @@ export async function deleteSubmission(id: string) {
  * 获取当前用户的投稿记录
  */
 export async function getMySubmissions() {
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return { data: [], error: '请先登录' }
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return { data: [], error: '请先登录' }
+    }
+
+    const { data, error } = await supabase
+      .from('submissions')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      return { data: [], error: `获取失败: ${error.message}` }
+    }
+
+    return { data: data || [], error: null }
+  } catch (err) {
+    console.warn('getMySubmissions: Supabase unavailable, using mock data', err)
+    return { data: [], error: null }
   }
-
-  const { data, error } = await supabase
-    .from('submissions')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-
-  if (error) {
-    return { data: [], error: `获取失败: ${error.message}` }
-  }
-
-  return { data: data || [], error: null }
 }

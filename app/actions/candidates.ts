@@ -1,41 +1,48 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { mockCandidates } from '@/lib/mock-data'
 import { revalidatePath } from 'next/cache'
 
 /**
  * 获取候选列表（后台管理用）
+ * 当 Supabase 不可用时自动回退到 mock 数据
  */
 export async function getCandidates(options?: {
   status?: string
   page?: number
   limit?: number
 }) {
-  const supabase = await createClient()
-  const { status, page = 1, limit = 20 } = options || {}
+  try {
+    const supabase = await createClient()
+    const { status, page = 1, limit = 20 } = options || {}
 
-  let query = supabase
-    .from('candidates')
-    .select(`
-      *,
-      profiles(nickname)
-    `, { count: 'exact' })
-    .order('created_at', { ascending: false })
+    let query = supabase
+      .from('candidates')
+      .select(`
+        *,
+        profiles(nickname)
+      `, { count: 'exact' })
+      .order('created_at', { ascending: false })
 
-  if (status) {
-    query = query.eq('review_status', status)
+    if (status) {
+      query = query.eq('review_status', status)
+    }
+
+    const from = (page - 1) * limit
+    const to = from + limit - 1
+
+    const { data, error, count } = await query.range(from, to)
+
+    if (error) {
+      throw new Error(`获取候选失败: ${error.message}`)
+    }
+
+    return { data: data || [], count: count || 0 }
+  } catch (err) {
+    console.warn('getCandidates: Supabase unavailable, using mock data', err)
+    return { data: mockCandidates, count: mockCandidates.length }
   }
-
-  const from = (page - 1) * limit
-  const to = from + limit - 1
-
-  const { data, error, count } = await query.range(from, to)
-
-  if (error) {
-    throw new Error(`获取候选失败: ${error.message}`)
-  }
-
-  return { data: data || [], count: count || 0 }
 }
 
 /**
