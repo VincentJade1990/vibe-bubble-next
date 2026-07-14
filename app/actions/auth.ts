@@ -88,7 +88,7 @@ export async function adminLogin(formData: FormData) {
     })
 
     if (error || !data.user) {
-      return { success: false, error: error?.message || '登录失败' }
+      console.log("DEBUG signIn error:", error); console.log("DEBUG error type:", typeof error); console.log("DEBUG error keys:", error ? Object.keys(error) : null); return { success: false, error: error?.message || JSON.stringify(error) || "登录失败" }
     }
 
     // 检查是否为管理员
